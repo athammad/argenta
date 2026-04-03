@@ -43,3 +43,7 @@ logs/
 credentials.json
 service_account.json
 secrets/
+
+# Claude Code
+CLAUDE.md
+.claude/

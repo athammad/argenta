@@ -210,3 +210,11 @@ coding conventions, and the PR process.
 ## License
 
 Apache 2.0. See [LICENSE](LICENSE).
+
+---
+
+## Name
+
+Argenta is named after the professor who introduced the author to causal inference
+during his bachelor's degree. The rigour and clarity with which he taught the field
+are the standard this project aims to meet.
