@@ -1,5 +1,11 @@
 # Argenta
 
+[![PyPI version](https://img.shields.io/pypi/v/argenta?color=blue&style=flat-square)](https://pypi.org/project/argenta/)
+[![Python](https://img.shields.io/pypi/pyversions/argenta?style=flat-square)](https://pypi.org/project/argenta/)
+[![CI](https://img.shields.io/github/actions/workflow/status/athammad/argenta/ci.yml?branch=master&label=CI&style=flat-square)](https://github.com/athammad/argenta/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-Apache%202.0-green?style=flat-square)](LICENSE)
+[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-orange?style=flat-square)](https://github.com/astral-sh/ruff)
+
 **Warehouse-native causal ML for experimentation.**
 
 Most A/B testing tools answer one question: *Did the experiment work?*
@@ -215,6 +221,5 @@ Apache 2.0. See [LICENSE](LICENSE).
 
 ## Name
 
-Argenta is named after the professor who introduced the author to causal inference
-during his bachelor's degree. The rigour and clarity with which he taught the field
-are the standard this project aims to meet.
+The name "Argenta" is inspired by the name of professor who introduced me to causal inference
+during my bachelor's degree.
