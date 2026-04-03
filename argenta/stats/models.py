@@ -8,8 +8,12 @@ rather than raw DataFrames or dicts.
 from __future__ import annotations
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field
+
+if TYPE_CHECKING:
+    from argenta.causal.models import CATEMetricResult
 
 
 class MetricResult(BaseModel):
@@ -68,6 +72,9 @@ class ExperimentResult(BaseModel):
         n_control_total: Total number of users in the control group across
             all metrics (based on the exposure count, not per-metric counts).
         n_treatment_total: Total number of users in the treatment group.
+        cate_results: Per-metric CATE results from the Phase 2 causal ML
+            layer.  Empty list if ``causal_ml`` is not configured or
+            ``CausalMLConfig.enabled`` is ``False``.
         run_at: UTC timestamp of when this analysis was run.
     """
 
@@ -76,6 +83,7 @@ class ExperimentResult(BaseModel):
     srm_detected: bool
     n_control_total: int
     n_treatment_total: int
+    cate_results: list["CATEMetricResult"] = Field(default_factory=list)
     run_at: datetime = Field(default_factory=datetime.utcnow)
 
     def significant_metrics(self, alpha: float = 0.05) -> list[MetricResult]:
@@ -115,4 +123,22 @@ class ExperimentResult(BaseModel):
                 f"{m.ci_high:>10.4f} {m.p_value:>10.4f} {lift_str:>8} "
                 f"{'Yes' if m.cuped_applied else 'No':>6} {sig_marker}"
             )
+
+        if self.cate_results:
+            lines += ["", "Causal ML (CATE)", "-" * 60]
+            for cr in self.cate_results:
+                lines.append(
+                    f"  {cr.metric_name}: mean CATE={cr.mean_cate:.4f}  "
+                    f"std={cr.std_cate:.4f}  n_scored={cr.n_users_scored:,}"
+                )
+                top = cr.top_segments(3)
+                if top:
+                    lines.append("  Top segments:")
+                    for seg in top:
+                        sig = " *" if seg.is_significant else ""
+                        lines.append(
+                            f"    {seg.feature_name}={seg.segment_value}: "
+                            f"ATE={seg.ate:.4f}{sig}"
+                        )
+
         return "\n".join(lines)

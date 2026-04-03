@@ -165,6 +165,53 @@ class ExperimentConfig(BaseModel):
     use_cuped: bool = True
 
 
+class CausalMLConfig(BaseModel):
+    """Optional configuration for the Phase 2 causal ML layer.
+
+    When present in ``ArgentoConfig``, the pipeline runs CATE estimation,
+    segment HTE analysis, and (optionally) full-user uplift scoring after the
+    baseline statistics step.
+
+    If this section is absent from the config, the pipeline behaves exactly
+    as Phase 1 (ATE + CUPED only).
+
+    Attributes:
+        enabled: Master switch.  Set to ``False`` to disable causal ML without
+            removing the config block.  Defaults to ``True``.
+        n_estimators: Number of trees in the Causal Forest.  Higher values
+            give more stable CATE estimates at the cost of compute time.
+            Defaults to ``200``.
+        min_samples_leaf: Minimum number of samples in each causal forest
+            leaf.  Acts as a regularisation parameter — higher values produce
+            smoother CATE estimates.  Defaults to ``10``.
+        max_depth: Maximum depth of each tree in the Causal Forest.  ``None``
+            means unlimited depth (default ``None``).
+        score_all_users: If ``True``, Argenta fetches the full user features
+            table (not just experiment participants) and scores every user for
+            uplift.  Written to ``argenta.user_cate_scores``.  Set to
+            ``False`` (default) to score only experiment participants.
+        max_segment_features: Maximum number of feature columns to analyse
+            for segment HTE.  Features are selected by their marginal variance
+            contribution.  Defaults to ``10``.
+        segment_min_users: Minimum number of users in a segment for it to be
+            reported.  Segments with fewer users are suppressed.
+            Defaults to ``50``.
+        nuisance_model: Model family to use for the first-stage (nuisance)
+            models in the Causal Forest DML.  One of ``'lightgbm'``
+            (default, fast) or ``'linear'`` (interpretable, assumes
+            linear relationship between outcome/treatment and features).
+    """
+
+    enabled: bool = True
+    n_estimators: int = Field(default=200, gt=0)
+    min_samples_leaf: int = Field(default=10, gt=0)
+    max_depth: int | None = None
+    score_all_users: bool = False
+    max_segment_features: int = Field(default=10, gt=0)
+    segment_min_users: int = Field(default=50, gt=0)
+    nuisance_model: Literal["lightgbm", "linear"] = "lightgbm"
+
+
 class ArgentoConfig(BaseModel):
     """Root configuration model for an Argenta analysis run.
 
@@ -192,10 +239,16 @@ class ArgentoConfig(BaseModel):
         user_features:
           table: ANALYTICS.PUBLIC.USER_DIM
           covariate_col: pre_experiment_revenue
+          feature_cols: [country, device_type, tenure_days]
 
         experiment:
           experiment_id: checkout_redesign_2024
           use_cuped: true
+
+        causal_ml:
+          enabled: true
+          n_estimators: 200
+          score_all_users: false
 
     Attributes:
         warehouse: Warehouse connection and output schema settings.
@@ -203,6 +256,8 @@ class ArgentoConfig(BaseModel):
         outcomes: Column mapping for the outcomes / events table.
         user_features: Column mapping for the user features table.
         experiment: Runtime parameters for the experiment being analysed.
+        causal_ml: Optional Phase 2 causal ML configuration.  If ``None``,
+            causal ML is not run.
     """
 
     warehouse: WarehouseConfig
@@ -210,6 +265,7 @@ class ArgentoConfig(BaseModel):
     outcomes: OutcomesTableConfig
     user_features: UserFeaturesTableConfig
     experiment: ExperimentConfig
+    causal_ml: CausalMLConfig | None = None
 
     @model_validator(mode="after")
     def _validate_cuped_covariate_present(self) -> "ArgentoConfig":

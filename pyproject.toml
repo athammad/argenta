@@ -45,11 +45,15 @@ dependencies = [
 snowflake = ["snowflake-connector-python>=3.0"]
 bigquery  = ["google-cloud-bigquery>=3.0", "db-dtypes>=1.0"]
 redshift  = ["redshift-connector>=2.0"]
+causal    = ["econml>=0.15", "lightgbm>=4.0", "scikit-learn>=1.3"]
 all = [
     "snowflake-connector-python>=3.0",
     "google-cloud-bigquery>=3.0",
     "db-dtypes>=1.0",
     "redshift-connector>=2.0",
+    "econml>=0.15",
+    "lightgbm>=4.0",
+    "scikit-learn>=1.3",
 ]
 dev = [
     "pytest>=7.0",

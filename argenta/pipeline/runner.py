@@ -11,9 +11,15 @@ Execution flow
    outcome join + feature join → CTAS in the warehouse).
 3. Fetch the prepared dataset from the warehouse into memory.
 4. Run statistics (winsorize → CUPED → ATE + CI + SRM) in Python.
-5. Write :class:`~argenta.stats.models.ExperimentResult` back to the
-   warehouse.
-6. Return the result.
+5. If ``causal_ml`` is configured and enabled:
+   a. Fit CausalForestDML per metric on the prepared dataset.
+   b. Predict CATE scores for experiment participants.
+   c. If ``score_all_users=True``, fetch the full user features table
+      and score all users for uplift.
+   d. Run segment HTE analysis for each metric.
+6. Write :class:`~argenta.stats.models.ExperimentResult` (including CATE
+   results) back to the warehouse.
+7. Return the result.
 """
 
 from __future__ import annotations
@@ -23,6 +29,10 @@ from datetime import datetime
 
 import pandas as pd
 
+from argenta.causal.cate import CATEEstimator
+from argenta.causal.models import CATEMetricResult
+from argenta.causal.segments import SegmentAnalyzer
+from argenta.causal.uplift import UpliftScorer
 from argenta.config.schema import ArgentoConfig
 from argenta.connectors import get_connector
 from argenta.connectors.base import BaseConnector
@@ -92,11 +102,32 @@ class PipelineRunner:
             logger.info("[PIPELINE] Fetching prepared dataset from: %s", dataset_table)
             df = connector.query(f"SELECT * FROM {dataset_table}")
 
-            # Step 3 — Compute statistics
+            # Step 3 — Compute baseline statistics
             logger.info("[PIPELINE] Computing statistics")
             result = self._compute_result(df, experiment_id)
 
-            # Step 4 — Write results back
+            # Step 4 — Causal ML (Phase 2), if configured
+            causal_cfg = self._config.causal_ml
+            if causal_cfg is not None and causal_cfg.enabled:
+                feature_cols = list(self._config.user_features.feature_cols)
+                if not feature_cols:
+                    logger.warning(
+                        "[PIPELINE] causal_ml is enabled but user_features.feature_cols is empty. "
+                        "Skipping CATE estimation."
+                    )
+                else:
+                    logger.info("[PIPELINE] Running causal ML layer")
+                    all_users_df: pd.DataFrame | None = None
+                    if causal_cfg.score_all_users:
+                        logger.info("[PIPELINE] Fetching full user features for uplift scoring")
+                        all_users_df = connector.query(
+                            f"SELECT * FROM {self._config.user_features.table}"
+                        )
+                    result.cate_results = self._compute_cate_results(
+                        df, feature_cols, causal_cfg, all_users_df
+                    )
+
+            # Step 5 — Write results back
             logger.info("[PIPELINE] Writing results to warehouse")
             writer = ResultsWriter(connector, self._config.warehouse.output_schema)
             writer.write_experiment_results(result)
@@ -261,3 +292,91 @@ class PipelineRunner:
             cuped_applied=cuped_applied,
             winsorized=winsorized,
         )
+
+    def _compute_cate_results(
+        self,
+        df: pd.DataFrame,
+        feature_cols: list[str],
+        causal_cfg: object,
+        all_users_df: pd.DataFrame | None,
+    ) -> list[CATEMetricResult]:
+        """Fit CATE models and run segment analysis for every metric.
+
+        Args:
+            df: The prepared dataset (one row per experiment participant).
+            feature_cols: Feature columns to use as covariates ``X``.
+            causal_cfg: The :class:`~argenta.config.schema.CausalMLConfig`
+                instance controlling model hyperparameters.
+            all_users_df: Full user features DataFrame for uplift scoring, or
+                ``None`` if ``score_all_users=False``.
+
+        Returns:
+            A list of :class:`~argenta.causal.models.CATEMetricResult` objects,
+            one per metric column.
+        """
+        from argenta.config.schema import CausalMLConfig  # avoid circular at module top
+        cfg: CausalMLConfig = causal_cfg  # type: ignore[assignment]
+
+        variant_col = self._config.exposures.variant_col
+        control_variant = self._config.experiment.control_variant
+        alpha = self._config.experiment.alpha
+
+        # Identify metric columns (same logic as _compute_result)
+        feature_set = set(feature_cols)
+        if self._config.user_features.covariate_col:
+            feature_set.add(self._config.user_features.covariate_col)
+        non_metric_cols = {variant_col, self._config.exposures.user_id_col} | feature_set
+        metric_cols = [c for c in df.columns if c not in non_metric_cols]
+
+        analyzer = SegmentAnalyzer(
+            min_users=cfg.segment_min_users,
+            max_features=cfg.max_segment_features,
+            alpha=alpha,
+        )
+
+        cate_results: list[CATEMetricResult] = []
+        for metric_col in metric_cols:
+            logger.info("[CAUSAL] Estimating CATE for metric: %s", metric_col)
+            try:
+                estimator = CATEEstimator(cfg)
+                estimator.fit(df, metric_col, variant_col, feature_cols)
+
+                # Score experiment participants (always)
+                score_df = df[[self._config.exposures.user_id_col] + feature_cols].copy()
+                user_scores = estimator.predict(score_df, alpha=alpha)
+
+                # Score all users if requested
+                if all_users_df is not None:
+                    logger.info("[CAUSAL] Scoring full user base for metric: %s", metric_col)
+                    scorer = UpliftScorer(estimator)
+                    user_scores = scorer.score_dataframe(all_users_df, feature_cols, alpha=alpha)
+
+                # Segment HTE analysis
+                segment_effects = analyzer.analyze(
+                    df, metric_col, variant_col, control_variant, feature_cols
+                )
+
+                diagnostics = estimator.model_diagnostics()
+                cate_scores = [s.cate_score for s in user_scores]
+
+                cate_results.append(CATEMetricResult(
+                    metric_name=metric_col,
+                    user_scores=user_scores,
+                    segment_effects=segment_effects,
+                    mean_cate=float(sum(cate_scores) / max(len(cate_scores), 1)),
+                    std_cate=float(pd.Series(cate_scores).std()) if cate_scores else 0.0,
+                    n_users_scored=len(user_scores),
+                    model_r2_outcome=diagnostics.get("r2_outcome"),
+                    model_r2_treatment=diagnostics.get("r2_treatment"),
+                ))
+                logger.info(
+                    "[CAUSAL] CATE complete for %s: mean=%.4f, segments=%d",
+                    metric_col, cate_results[-1].mean_cate, len(segment_effects),
+                )
+            except Exception as exc:
+                logger.warning(
+                    "[CAUSAL] CATE estimation failed for metric %s: %s — skipping",
+                    metric_col, exc,
+                )
+
+        return cate_results
