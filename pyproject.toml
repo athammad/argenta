@@ -1,0 +1,90 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "argenta"
+version = "0.1.0"
+description = "Warehouse-native causal ML experimentation platform"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+authors = [{ name = "Argenta Contributors" }]
+keywords = [
+    "causal-inference",
+    "experimentation",
+    "a-b-testing",
+    "warehouse",
+    "cuped",
+    "heterogeneous-treatment-effects",
+    "uplift-modeling",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+]
+
+dependencies = [
+    "pydantic>=2.0",
+    "pandas>=2.0",
+    "scipy>=1.11",
+    "statsmodels>=0.14",
+    "jinja2>=3.1",
+    "pyyaml>=6.0",
+    "numpy>=1.25",
+]
+
+[project.optional-dependencies]
+snowflake = ["snowflake-connector-python>=3.0"]
+bigquery  = ["google-cloud-bigquery>=3.0", "db-dtypes>=1.0"]
+redshift  = ["redshift-connector>=2.0"]
+all = [
+    "snowflake-connector-python>=3.0",
+    "google-cloud-bigquery>=3.0",
+    "db-dtypes>=1.0",
+    "redshift-connector>=2.0",
+]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "pytest-mock>=3.0",
+    "ruff>=0.1",
+    "mypy>=1.5",
+    "pandas-stubs>=2.0",
+]
+
+[project.urls]
+Homepage      = "https://github.com/argenta-ml/argenta"
+Documentation = "https://argenta-ml.github.io/argenta"
+Repository    = "https://github.com/argenta-ml/argenta"
+Issues        = "https://github.com/argenta-ml/argenta/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["argenta"]
+
+[tool.ruff]
+line-length    = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version      = "3.10"
+strict              = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts   = "--cov=argenta --cov-report=term-missing"
+markers   = ["integration: marks tests that require live warehouse credentials (deselect with -m 'not integration')"]
+
+[tool.coverage.run]
+omit = ["tests/*"]

@@ -1,0 +1,43 @@
+{#
+  outcome_join.sql.j2
+  -------------------
+  Join the deduplicated exposures to the outcomes table.  Only events that
+  occurred STRICTLY AFTER the user's first exposure are included.  This is
+  the fundamental causal window: we observe Y(t) for t > t_exposure.
+
+  Pre-exposure events must be excluded to avoid:
+    - Contamination from pre-existing behavioural differences
+    - Reverse causation (outcome influencing "treatment")
+
+  Events are aggregated to the USER level (one row per user per metric).
+  This is required for the t-test and CUPED stats layer, which operate on
+  user-level observations.
+
+  Template variables (all pre-computed by SQLPipelineGenerator):
+    outcomes_table          — fully qualified outcomes table name
+    o_user_id_col           — user identifier column in outcomes table
+    o_event_name_col        — event type column
+    o_value_col             — numeric value column (revenue, etc.)
+    o_timestamp_col         — event timestamp column
+    o_cast_ts_expr          — dialect CAST for the outcomes timestamp
+    e_user_id_col           — user identifier column in first_exposures CTE
+    e_variant_col           — variant column in first_exposures CTE
+    metric_select_exprs     — list of pre-built "COALESCE(SUM(...), 0) AS ..." strings
+    event_filter_clause     — "AND o.event_name_col IN (...)" or empty string
+#}
+user_outcomes AS (
+    SELECT
+        e.{{ e_user_id_col }},
+        e.{{ e_variant_col }},
+        {% for expr in metric_select_exprs %}
+        {{ expr }}{% if not loop.last %},{% endif %}
+        {% endfor %}
+    FROM first_exposures e
+    LEFT JOIN {{ outcomes_table }} o
+        ON  o.{{ o_user_id_col }} = e.{{ e_user_id_col }}
+        AND {{ o_cast_ts_expr }} > e.exposure_ts
+        {{ event_filter_clause }}
+    GROUP BY
+        e.{{ e_user_id_col }},
+        e.{{ e_variant_col }}
+)

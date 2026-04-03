@@ -1,0 +1,44 @@
+{#
+  exposure_dedup.sql.j2
+  ---------------------
+  Deduplicate the exposures table so each user appears exactly once per
+  experiment.  We keep the FIRST exposure (earliest timestamp) because:
+
+    1. It represents the moment the user was randomised — the causal
+       baseline.
+    2. Any later duplicate exposures are re-exposures that could be caused
+       by the experiment itself (e.g. a user refreshing a page) and should
+       not change the original assignment.
+
+  This CTE is consumed by outcome_join.sql.j2 and feature_join.sql.j2.
+
+  Template variables:
+    exposures_table      — fully qualified exposures table name
+    user_id_col          — column holding the user identifier
+    experiment_id_col    — column holding the experiment name/ID
+    variant_col          — column holding the variant assignment
+    timestamp_col        — column holding the assignment timestamp
+    experiment_id        — the specific experiment_id value to filter on
+    control_variant      — label of the control group
+    treatment_variant    — label of the treatment group (may be None for
+                           auto-detect; caller should have resolved it)
+    cast_timestamp_expr  — dialect-appropriate CAST expression for the ts
+    rn_expr              — ROW_NUMBER() window expression
+#}
+first_exposures AS (
+    SELECT
+        {{ user_id_col }},
+        {{ variant_col }},
+        {{ cast_timestamp_expr }} AS exposure_ts
+    FROM (
+        SELECT
+            {{ user_id_col }},
+            {{ variant_col }},
+            {{ timestamp_col }},
+            {{ rn_expr }} AS rn
+        FROM {{ exposures_table }}
+        WHERE LOWER(CAST({{ experiment_id_col }} AS VARCHAR)) = LOWER('{{ experiment_id }}')
+          AND {{ variant_col }} IN ('{{ control_variant }}', '{{ treatment_variant }}')
+    ) ranked
+    WHERE rn = 1
+)

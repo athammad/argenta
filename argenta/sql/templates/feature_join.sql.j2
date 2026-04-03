@@ -1,0 +1,31 @@
+{#
+  feature_join.sql.j2
+  -------------------
+  Join user features onto the user_outcomes CTE.
+
+  User features serve two purposes:
+    1. CUPED covariate — the pre-experiment metric column reduces outcome
+       variance and increases statistical power.
+    2. Causal ML inputs — feature columns are used as X in CATE estimation
+       and uplift modelling (Phase 2).
+
+  A LEFT JOIN is used so users without a matching row in the features table
+  are still included in the analysis with NULL feature values.  The stats
+  layer handles NULLs (e.g. CUPED skips rows where the covariate is NULL).
+
+  Template variables (all pre-computed by SQLPipelineGenerator):
+    features_table      — fully qualified user features table name
+    f_user_id_col       — user identifier column in features table
+    o_user_id_col       — user identifier column in user_outcomes CTE
+    feature_select_cols — list of "f.col_name" strings to SELECT
+#}
+user_data AS (
+    SELECT
+        o.*,
+        {% for col in feature_select_cols %}
+        f.{{ col }}{% if not loop.last %},{% endif %}
+        {% endfor %}
+    FROM user_outcomes o
+    LEFT JOIN {{ features_table }} f
+        ON f.{{ f_user_id_col }} = o.{{ o_user_id_col }}
+)

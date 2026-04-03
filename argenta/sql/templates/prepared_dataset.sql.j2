@@ -1,0 +1,29 @@
+{#
+  prepared_dataset.sql.j2
+  -----------------------
+  The full pipeline query: assembles the three CTEs into a single
+  CREATE TABLE AS SELECT that writes the analysis-ready dataset into
+  the client's warehouse under the Argenta output schema.
+
+  The resulting table has one row per user with:
+    - user_id          — user identifier
+    - variant          — 'control' or 'treatment'
+    - metric_*         — aggregated outcome values per configured event
+    - feature columns  — user attributes for CUPED and (Phase 2) CATE
+
+  This table is the input to the Python stats layer.  It stays in the
+  client's warehouse — Argenta never moves it externally.
+
+  Template variables (all pre-computed by SQLPipelineGenerator):
+    ctas_statement       — CREATE OR REPLACE TABLE / DROP + CREATE
+                           (dialect-specific, built by dialect.create_table_as)
+    exposure_dedup_cte   — rendered exposure_dedup.sql.j2 block
+    outcome_join_cte     — rendered outcome_join.sql.j2 block
+    feature_join_cte     — rendered feature_join.sql.j2 block
+#}
+{{ ctas_statement }}
+WITH
+{{ exposure_dedup_cte }},
+{{ outcome_join_cte }},
+{{ feature_join_cte }}
+SELECT * FROM user_data
