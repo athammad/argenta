@@ -1,10 +1,14 @@
-# Argenta
+<p align="center">
+  <img src="assets/logo.svg" alt="Argenta" width="420"/>
+</p>
 
-[![PyPI version](https://img.shields.io/pypi/v/argenta?color=blue&style=flat-square)](https://pypi.org/project/argenta/)
-[![Python](https://img.shields.io/pypi/pyversions/argenta?style=flat-square)](https://pypi.org/project/argenta/)
-[![CI](https://img.shields.io/github/actions/workflow/status/athammad/argenta/ci.yml?branch=master&label=CI&style=flat-square)](https://github.com/athammad/argenta/actions/workflows/ci.yml)
-[![License](https://img.shields.io/badge/license-Apache%202.0-green?style=flat-square)](LICENSE)
-[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-orange?style=flat-square)](https://github.com/astral-sh/ruff)
+<p align="center">
+  <a href="https://pypi.org/project/argenta/"><img src="https://img.shields.io/pypi/v/argenta?color=blue&style=flat-square" alt="PyPI version"/></a>
+  <a href="https://pypi.org/project/argenta/"><img src="https://img.shields.io/pypi/pyversions/argenta?style=flat-square" alt="Python"/></a>
+  <a href="https://github.com/athammad/argenta/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/athammad/argenta/ci.yml?branch=master&label=CI&style=flat-square" alt="CI"/></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-green?style=flat-square" alt="License"/></a>
+  <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/badge/code%20style-ruff-orange?style=flat-square" alt="Code style: ruff"/></a>
+</p>
 
 **Warehouse-native causal ML for experimentation.**
 
