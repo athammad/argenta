@@ -47,3 +47,6 @@ secrets/
 # Claude Code
 CLAUDE.md
 .claude/
+
+# Internal planning
+idea.md
