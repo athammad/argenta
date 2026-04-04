@@ -148,18 +148,18 @@ Results written back to your warehouse
 
 ## Statistical Methods
 
-| Method | Purpose | Phase |
-|---|---|---|
-| Welch's t-test | ATE + p-value | 1 |
-| Confidence intervals | 95% CI on ATE | 1 |
-| Winsorization | Outlier handling for revenue metrics | 1 |
-| SRM detection | Sample ratio mismatch check | 1 |
-| CUPED | Variance reduction via pre-experiment covariate | 1 |
-| Causal Forest (CausalForestDML) | Non-parametric CATE estimation | 2 |
-| X-Learner | CATE with unbalanced treatment/control | 2 |
-| Uplift modeling | Score users not in experiment | 2 |
-| Sequential testing (mSPRT) | Always-valid p-values | 2 |
-| Multiple testing correction | Bonferroni / BH-FDR across metrics | 2 |
+| Method | Purpose |
+|---|---|
+| Welch's t-test | ATE + p-value |
+| Confidence intervals | 95% CI on ATE |
+| Winsorization | Outlier handling for revenue metrics |
+| SRM detection | Sample ratio mismatch check |
+| CUPED | Variance reduction via pre-experiment covariate |
+| Causal Forest (CausalForestDML) | Non-parametric CATE estimation |
+| X-Learner | CATE with unbalanced treatment/control |
+| Uplift modeling | Score users not in experiment |
+| Sequential testing (mSPRT) | Always-valid p-values |
+| Multiple testing correction | Bonferroni / BH-FDR across metrics |
 
 ---
 
