@@ -223,7 +223,6 @@ Apache 2.0. See [LICENSE](LICENSE).
 
 ---
 
-## Name
+## Side note
 
-The name "Argenta" is inspired by the name of professor who introduced me to causal inference
-during my bachelor's degree.
+The name "Argenta" is inspired by the name of a professor who introduced me to causal inference during my bachelor's degree.
