@@ -34,8 +34,6 @@ LaunchDarkly, Optimizely, homegrown feature flags). Argenta only analyzes.
 - **Not a real-time system.** Analysis runs post-hoc, after experiments have collected data.
 - **Not a data pipeline tool.** Argenta does not move or replicate your data. SQL runs inside
   your warehouse; results are written back to a schema you control.
-- **Not a MAB / contextual bandit system.** Adaptive assignment requires controlling the
-  assignment layer, which is out of scope.
 
 ---
 
@@ -184,8 +182,8 @@ Argenta writes results back to `{output_schema}` in your warehouse (default: `ar
 | Table | Contents |
 |---|---|
 | `argenta.experiment_results` | ATE, CI, p-value, SRM flag per metric |
-| `argenta.user_cate_scores` | Per-user CATE score (Phase 2) |
-| `argenta.segment_effects` | HTE by segment (Phase 2) |
+| `argenta.user_cate_scores` | Per-user CATE score |
+| `argenta.segment_effects` | HTE by segment |
 
 ---
 
