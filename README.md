@@ -3,8 +3,8 @@
 </p>
 
 <p align="center">
-  <a href="https://pypi.org/project/argenta/"><img src="https://img.shields.io/pypi/v/argenta?color=blue&style=flat-square" alt="PyPI version"/></a>
-  <a href="https://pypi.org/project/argenta/"><img src="https://img.shields.io/pypi/pyversions/argenta?style=flat-square" alt="Python"/></a>
+  <a href="https://pypi.org/project/argenta-cml/"><img src="https://img.shields.io/pypi/v/argenta-cml?color=blue&style=flat-square" alt="PyPI version"/></a>
+  <a href="https://pypi.org/project/argenta-cml/"><img src="https://img.shields.io/pypi/pyversions/argenta-cml?style=flat-square" alt="Python"/></a>
   <a href="https://github.com/athammad/argenta/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/athammad/argenta/ci.yml?branch=master&label=CI&style=flat-square" alt="CI"/></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-green?style=flat-square" alt="License"/></a>
   <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/badge/code%20style-ruff-orange?style=flat-square" alt="Code style: ruff"/></a>
@@ -43,10 +43,10 @@ LaunchDarkly, Optimizely, homegrown feature flags). Argenta only analyzes.
 
 ```bash
 # Pick your warehouse:
-pip install "argenta[snowflake]"
-pip install "argenta[bigquery]"
-pip install "argenta[redshift]"
-pip install "argenta[all]"   # all warehouses
+pip install "argenta-cml[snowflake]"
+pip install "argenta-cml[bigquery]"
+pip install "argenta-cml[redshift]"
+pip install "argenta-cml[all]"   # all warehouses
 ```
 
 ### 2. Create a config file

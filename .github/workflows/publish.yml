@@ -40,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/argenta
+      url: https://pypi.org/p/argenta-cml
 
     # Uses PyPI Trusted Publishing (OIDC) — no API token needed.
     # Set up at https://pypi.org/manage/account/publishing/

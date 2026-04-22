@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "argenta"
+name = "argenta-cml"
 version = "0.1.0"
 description = "Warehouse-native causal ML experimentation platform"
 readme = "README.md"
